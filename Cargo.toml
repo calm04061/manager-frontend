@@ -7,9 +7,9 @@ description = "angular-example-frontend description."
 build = "build.rs"
 
 [dependencies]
-actix-web = { workspace = true }
-actix-web-static-files = { workspace = true }
-static-files = { workspace = true }
+actix-web = { version = "4.4.1" }
+actix-web-static-files = { version = "4.0.1", features = ["change-detection"] }
+static-files = { version = "0.2.3" }
 
 [build-dependencies]
-static-files = { workspace = true }
+static-files = { version = "0.2.3" }
