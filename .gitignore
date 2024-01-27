@@ -1,0 +1,11 @@
+target
+.idea/
+*.iml
+*.lock
+node_modules
+package-lock.json
+store
+data
+tmp
+*.log
+.DS_Store
