@@ -1,13 +1,14 @@
 [package]
 name = "frontend"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Calm0406 <calm0406@163.com>"]
 edition = "2021"
 description = "angular-example-frontend description."
 build = "build.rs"
-
+[lib]
+crate_type = ["cdylib"]
 [dependencies]
-actix-web = { version = "4.4.1" }
+actix-web = { version = "4.5.1" }
 actix-web-static-files = { version = "4.0.1", features = ["change-detection"] }
 static-files = { version = "0.2.3" }
 
