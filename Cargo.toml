@@ -1,6 +1,6 @@
 [package]
 name = "frontend"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Calm0406 <calm0406@163.com>"]
 edition = "2021"
 description = "angular-example-frontend description."
@@ -8,9 +8,17 @@ build = "build.rs"
 [lib]
 crate_type = ["cdylib"]
 [dependencies]
-actix-web = { version = "4.5.1" }
+actix-web = { version = "4.9.0" }
 actix-web-static-files = { version = "4.0.1", features = ["change-detection"] }
-static-files = { version = "0.2.3" }
+static-files = { version = "0.2.4" }
 
 [build-dependencies]
-static-files = { version = "0.2.3" }
+static-files = { version = "0.2.4" }
+
+[gitflow]
+production_branch = "main"
+development_branch = "develop"
+feature_branch_prefix = "feature/"
+hotfix_branch_prefix = "hotfix/"
+version_tag_prefix = "v"
+origin = "origin"
