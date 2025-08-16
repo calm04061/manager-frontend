@@ -47,7 +47,18 @@
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="12">
+              <v-col cols="6">
+                <v-select
+                  :items="members"
+                  label="成员"
+                  item-text="name"
+                  item-value="id"
+                  v-model="item.memberId"
+                  @change="onMemberChange"
+                  required
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
                 <v-select
                   :items="platforms"
                   label="平台"
@@ -103,7 +114,19 @@
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="12">
+              <v-col cols="6">
+                <v-select
+                  :items="members"
+                  label="账户"
+                  item-text="name"
+                  item-value="id"
+                  v-model="item.memberId"
+                  required
+                  onchange="onMemberChange"
+
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
                 <v-select
                   :items="platforms"
                   label="平台"
@@ -159,7 +182,17 @@
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="12">
+              <v-col cols="6">
+                <v-select
+                  :items="members"
+                  item-text="name"
+                  item-value="id"
+                  label="会员"
+                  v-model="item.memberId"
+                  readonly
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
                 <v-select
                   :items="platforms"
                   item-text="name"
@@ -245,9 +278,11 @@
 
 <
 <script>
+
 export default {
   mounted() {
     this.listPlatform()
+    this.listMember()
     this.list();
     this.parseUrl();
   },
@@ -262,6 +297,14 @@ export default {
       deep: true,
     },
     "item.platformId":{
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listTopParent(this.item.memberId, val);
+        }
+      },
+      deep: true,
+    } ,
+    "item.memberId":{
       handler(val, oldVal) {
         if (val !== oldVal) {
           this.listTopParent(val);
@@ -280,6 +323,7 @@ export default {
             that.item.id = null;
             that.item.account = "";
             that.item.platformId = null;
+            that.item.memberId = null;
             that.item.description = "";
             that.dialog[type] = true;
             break;
@@ -303,17 +347,31 @@ export default {
     onPlatformChange(e){
       console.log(1)
     },
-    listTopParent(platformId, callback) {
-      if (!platformId){
-        return
+    onMemberChange(e){
+      console.log(1)
+    },
+    listTopParent(memberId, platformId, callback) {
+      let query =[];
+      if (memberId && platformId){
+        query.push("memberId=" + memberId);
+        query.push("platformId=" + platformId);
+      }else{
+        return;
       }
       let $this = this;
-      let res = fetch("/api/finance/account/0/children?platformId=" + platformId)
+      query =  query.join("&");
+      let res = fetch("/api/finance/account/0/children?"+query)
         .then((res) => {
           return res.json();
         })
         .then((json) => {
           $this.parents = json.data;
+          if ($this.parents.length ===0) {
+            $this.parents.push({
+              id: -1,
+              account: "无上级",
+            });
+          }
         });
       if (callback) {
         res.then(callback);
@@ -422,6 +480,19 @@ export default {
         .then(json => {
           $this.platforms = json.data;
         })
+    },
+    listMember() {
+      let $this = this;
+      fetch("/api/member/list", {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      }).then((res) => {
+        return res.json()
+      })
+        .then(json => {
+          $this.members = json.data;
+        })
     }
   },
   data() {
@@ -439,19 +510,22 @@ export default {
         id: 0,
         account: "",
         platformId: 0,
+        memberId: 0,
         description: "",
         parentId: null,
       },
       platforms: [],
+      members: [],
       headers: [
         {
           text: "ID",
           value: "id",
           width: 70
         },
-        {text: "主账号", value: "parentName", width: 150},
-        {text: "账号", value: "account", width: 150},
+        {text: "成员", value: "memberName", width: 150},
         {text: "平台", value: "platformName", width: 130},
+        {text: "账号", value: "account", width: 150},
+        {text: "父账号", value: "parentName", width: 150},
         {text: "说明", value: "description"},
         {text: "", value: "actions", sortable: false, width: 100},
       ],
