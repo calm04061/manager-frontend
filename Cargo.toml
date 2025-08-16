@@ -1,6 +1,6 @@
 [package]
 name = "frontend"
-version = "0.4.0-member"
+version = "0.4.0-SNAPSHOT"
 authors = ["Calm0406 <calm0406@163.com>"]
 edition = "2024"
 description = "angular-example-frontend description."
