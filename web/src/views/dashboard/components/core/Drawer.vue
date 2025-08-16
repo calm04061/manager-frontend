@@ -114,8 +114,12 @@ export default {
         group: "/account",
         children: [       {
             icon: "mdi-account",
-            title: "账号列表",
+            title: "登录账号列表",
             to: "account",
+          }, {
+            icon: "mdi-account",
+            title: "账号列表",
+            to: "member",
           },]
       },
       {
