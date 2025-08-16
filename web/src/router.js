@@ -32,9 +32,14 @@ export default new Router({
           component: resolve => require(['@/views/finance/finance'], resolve)
         },
         {
-          name: '账号列表',
+          name: '登录账号列表',
           path: 'account/account/:type?/:id?',
           component: resolve => require(['@/views/account/account'], resolve)
+        },
+        {
+          name: '账号列表',
+          path: 'account/member/:type?/:id?',
+          component: resolve => require(['@/views/account/member.vue'], resolve)
         }, {
           name: '我',
           path: 'account/info',

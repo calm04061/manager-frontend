@@ -13,7 +13,7 @@
           @click="add"
           color="indigo"
         >
-          <v-icon dark> mdi-plus </v-icon>
+          <v-icon dark> mdi-plus</v-icon>
         </v-btn>
       </template>
       <v-data-table
@@ -26,12 +26,13 @@
       >
         <template v-slot:item.id="{ item }">
           <router-link :to="{ path: '/finance/account/detail/' + item.id }">{{
-            item.id
-          }}</router-link>
+              item.id
+            }}
+          </router-link>
         </template>
         <template v-slot:item.actions="{ item }">
-          <v-icon small class="mr-2" @click="update(item)"> mdi-pencil </v-icon>
-          <v-icon small @click="del(item)"> mdi-delete </v-icon>
+          <v-icon small class="mr-2" @click="update(item)"> mdi-pencil</v-icon>
+          <v-icon small @click="del(item)"> mdi-delete</v-icon>
         </template>
       </v-data-table>
     </base-material-card>
@@ -46,22 +47,44 @@
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  label="账号"
-                  v-model="item.account"
+              <v-col cols="6">
+                <v-select
+                  :items="members"
+                  label="成员"
+                  item-text="name"
+                  item-value="id"
+                  v-model="item.memberId"
+                  @change="onMemberChange"
                   required
-                ></v-text-field>
+                ></v-select>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="6">
                 <v-select
                   :items="platforms"
                   label="平台"
                   item-text="name"
                   item-value="id"
                   v-model="item.platformId"
+                  @change="onPlatformChange"
                   required
                 ></v-select>
+              </v-col>
+              <v-col cols="6">
+                <v-select
+                  label="上级"
+                  v-model="item.parentId"
+                  item-value="id"
+                  item-text="account"
+                  :items="parents"
+                  clearable
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  label="账号"
+                  v-model="item.account"
+                  required
+                ></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-textarea
@@ -91,22 +114,45 @@
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  label="账号"
-                  v-model="item.account"
+              <v-col cols="6">
+                <v-select
+                  :items="members"
+                  label="账户"
+                  item-text="name"
+                  item-value="id"
+                  v-model="item.memberId"
                   required
-                ></v-text-field>
+                  onchange="onMemberChange"
+
+                ></v-select>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="6">
                 <v-select
                   :items="platforms"
                   label="平台"
                   item-text="name"
                   item-value="id"
                   v-model="item.platformId"
+                  onchange="onPlatformChange"
                   required
                 ></v-select>
+              </v-col>
+              <v-col cols="6">
+                <v-select
+                  label="上级"
+                  v-model="item.parentId"
+                  item-value="id"
+                  item-text="account"
+                  :items="parents"
+                  clearable
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  label="账号"
+                  v-model="item.account"
+                  required
+                ></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-textarea
@@ -136,14 +182,17 @@
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  label="账号"
-                  v-model="item.account"
+              <v-col cols="6">
+                <v-select
+                  :items="members"
+                  item-text="name"
+                  item-value="id"
+                  label="会员"
+                  v-model="item.memberId"
                   readonly
-                ></v-text-field>
+                ></v-select>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="6">
                 <v-select
                   :items="platforms"
                   item-text="name"
@@ -153,6 +202,24 @@
                   readonly
                 ></v-select>
               </v-col>
+              <v-col cols="6">
+                <v-select
+                  label="上级"
+                  v-model="item.parentId"
+                  item-value="id"
+                  item-text="account"
+                  :items="parents"
+                  readonly
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  label="账号"
+                  v-model="item.account"
+                  readonly
+                ></v-text-field>
+              </v-col>
+
               <v-col cols="12">
                 <v-textarea
                   solo
@@ -188,7 +255,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-     <v-snackbar
+    <v-snackbar
       v-model="snackbar"
       :light="true"
       :top="true"
@@ -209,10 +276,13 @@
   </v-container>
 </template>
 
-<<script>
+<
+<script>
+
 export default {
   mounted() {
     this.listPlatform()
+    this.listMember()
     this.list();
     this.parseUrl();
   },
@@ -226,6 +296,22 @@ export default {
       },
       deep: true,
     },
+    "item.platformId":{
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listTopParent(this.item.memberId, val);
+        }
+      },
+      deep: true,
+    } ,
+    "item.memberId":{
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listTopParent(val);
+        }
+      },
+      deep: true,
+    }
   },
   methods: {
     parseUrl() {
@@ -233,18 +319,20 @@ export default {
       if (type) {
         switch (type) {
           case "add": {
-            this.item.id = null;
-            this.item.account = "";
-            this.item.platformId = null;
-            this.item.description = "";
-            this.dialog[type] = true;
+            let that = this;
+            that.item.id = null;
+            that.item.account = "";
+            that.item.platformId = null;
+            that.item.memberId = null;
+            that.item.description = "";
+            that.dialog[type] = true;
             break;
           }
           case "detail":
           case "update": {
             let that = this;
             let id = this.$route.params.id;
-            this.detail(id, function () {
+            that.detail(id, function (a) {
               that.dialog[type] = true;
             });
             break;
@@ -256,14 +344,47 @@ export default {
         this.dialog.update = false;
       }
     },
+    onPlatformChange(e){
+      console.log(1)
+    },
+    onMemberChange(e){
+      console.log(1)
+    },
+    listTopParent(memberId, platformId, callback) {
+      let query =[];
+      if (memberId && platformId){
+        query.push("memberId=" + memberId);
+        query.push("platformId=" + platformId);
+      }else{
+        return;
+      }
+      let $this = this;
+      query =  query.join("&");
+      let res = fetch("/api/finance/account/0/children?"+query)
+        .then((res) => {
+          return res.json();
+        })
+        .then((json) => {
+          $this.parents = json.data;
+          if ($this.parents.length ===0) {
+            $this.parents.push({
+              id: -1,
+              account: "无上级",
+            });
+          }
+        });
+      if (callback) {
+        res.then(callback);
+      }
+    },
     list(callback) {
       let $this = this;
-      const { page, itemsPerPage } = this.options;
+      const {page, itemsPerPage} = this.options;
       let res = fetch(
         "/api/finance/account?currentPage=" +
-          page +
-          "&pageSize=" +
-          itemsPerPage
+        page +
+        "&pageSize=" +
+        itemsPerPage
       )
         .then((res) => {
           return res.json();
@@ -320,24 +441,26 @@ export default {
     delConfirm() {
       let $this = this;
       fetch("/api/finance/account/" + $this.item.id, {
-        method: "DELETE", 
+        method: "DELETE",
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
       })
-      .then(function () {
-        $this.dialog.delete = false;
-      })
-      .then($this.list);
+        .then(function () {
+          $this.dialog.delete = false;
+        })
+        .then($this.list);
     },
     detail(id, callback) {
       let $this = this;
-      let prom = fetch("/api/finance/account/" + id,{
+      let prom = fetch("/api/finance/account/" + id, {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
       })
-        .then((resp) =>  {return resp.json()})
+        .then((resp) => {
+          return resp.json()
+        })
         .then((json) => {
           $this.item = json.data;
         });
@@ -345,22 +468,37 @@ export default {
         prom.then(callback);
       }
     },
-    listPlatform(){
+    listPlatform() {
       let $this = this;
-       fetch("/api/finance/platform/list",{
+      fetch("/api/finance/platform/list", {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
-      }).then((res)=>{return res.json()})
-       .then(json=>{
-        $this.platforms=json.data;
-       })
+      }).then((res) => {
+        return res.json()
+      })
+        .then(json => {
+          $this.platforms = json.data;
+        })
+    },
+    listMember() {
+      let $this = this;
+      fetch("/api/member/list", {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      }).then((res) => {
+        return res.json()
+      })
+        .then(json => {
+          $this.members = json.data;
+        })
     }
   },
   data() {
     return {
       snackbar: false,
-      text: 'Hello, I\'m a snackbar',   
+      text: 'Hello, I\'m a snackbar',
       dialog: {
         add: false,
         detail: false,
@@ -369,23 +507,29 @@ export default {
       },
       options: {},
       item: {
-        id:0,
-        account:"",
-        platformId:0,
-        description:"",
+        id: 0,
+        account: "",
+        platformId: 0,
+        memberId: 0,
+        description: "",
+        parentId: null,
       },
-      platforms:[],
+      platforms: [],
+      members: [],
       headers: [
         {
           text: "ID",
           value: "id",
           width: 70
         },
-        { text: "账号", value: "account", width: 150 },
-        { text: "平台", value: "platformName" , width: 130 },
-        { text: "说明", value: "description" },
-        { text: "", value: "actions", sortable: false, width: 100 },
+        {text: "成员", value: "memberName", width: 150},
+        {text: "平台", value: "platformName", width: 130},
+        {text: "账号", value: "account", width: 150},
+        {text: "父账号", value: "parentName", width: 150},
+        {text: "说明", value: "description"},
+        {text: "", value: "actions", sortable: false, width: 100},
       ],
+      parents: [],
       page: {
         total: 0,
         list: [],
