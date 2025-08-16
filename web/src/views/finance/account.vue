@@ -30,6 +30,14 @@
             }}
           </router-link>
         </template>
+        <template v-slot:item.enabled="{ item }">
+          <v-switch
+            v-model="item.enabled"
+            @change="enabled(item)"
+            :false-value=false
+            :true-value=true
+          ></v-switch>
+        </template>
         <template v-slot:item.actions="{ item }">
           <v-icon small class="mr-2" @click="update(item)"> mdi-pencil</v-icon>
           <v-icon small @click="del(item)"> mdi-delete</v-icon>
@@ -429,7 +437,10 @@ export default {
       }
       promise
         .then(function () {
-          $this.$router.push("/finance/account");
+          let current = $this.$router.history.current.fullPath;
+          if(current!=="/finance/account"){
+            $this.$router.push("/finance/account");
+          }
         })
         .then($this.list);
     },
@@ -493,6 +504,11 @@ export default {
         .then(json => {
           $this.members = json.data;
         })
+    },
+    enabled(item){
+      let $this = this;
+      $this.item = item;
+      $this.save();
     }
   },
   data() {
@@ -513,6 +529,7 @@ export default {
         memberId: 0,
         description: "",
         parentId: null,
+        enabled: null,
       },
       platforms: [],
       members: [],
@@ -520,12 +537,13 @@ export default {
         {
           text: "ID",
           value: "id",
-          width: 70
+          width: 60
         },
-        {text: "成员", value: "memberName", width: 150},
+        {text: "成员", value: "memberName", width: 90},
         {text: "平台", value: "platformName", width: 130},
         {text: "账号", value: "account", width: 150},
         {text: "父账号", value: "parentName", width: 150},
+        {text: "启用", value: "enabled", width: 90},
         {text: "说明", value: "description"},
         {text: "", value: "actions", sortable: false, width: 100},
       ],
