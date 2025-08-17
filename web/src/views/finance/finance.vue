@@ -599,8 +599,8 @@ export default {
       const {page, itemsPerPage} = this.options
       const res = pageFinances(page, itemsPerPage, $this.query)
         .then((json) => {
-          $this.page.list = json.data.list
-          $this.page.total = json.data.totalCount
+          $this.page.list = json.list
+          $this.page.total = json.totalCount
         })
       if (callback) {
         res.then(callback)

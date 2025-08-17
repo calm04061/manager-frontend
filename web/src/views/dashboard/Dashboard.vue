@@ -1,7 +1,17 @@
 <template>
   <v-container id="dashboard" fluid tag="section">
     <v-row>
-      <v-col cols="6">
+      <v-col cols="4">
+        <v-select
+          :items="members"
+          label="成员"
+          item-text="name"
+          item-value="id"
+          v-model="query.memberId"
+          clearable
+        ></v-select>
+      </v-col>
+      <v-col cols="4">
       <v-select
         :items="platforms"
         label="平台"
@@ -11,7 +21,7 @@
         clearable
       ></v-select>
       </v-col>
-      <v-col cols="6">
+      <v-col cols="4">
       <v-select
         :items="accounts"
         label="账户"
@@ -42,21 +52,25 @@
   </v-container>
 </template>
 <script>
-import net from "../../net";
+import net from "@/net";
+import {financeAnalysis, listAccount, listMember, listPlatform} from "@/service/api";
 export default {
   name: "Dashboard",
 
   mounted() {
     this.listPlatform();
+    this.listMember();
     this.analysisData();
   },
   data() {
     return {
       query: {
         platformId: "",
+        memberId: "",
         accountId: "",
       },
       platforms: [],
+      members: [],
       accounts: [],
       snackbar: false,
       text: "Hello, I'm a snackbar",
@@ -64,17 +78,25 @@ export default {
     };
   },
   watch: {
+    "query.memberId": {
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listAccount(val,this.query.platformId, this.analysisData);
+        }
+      },
+      deep: true,
+    },
     "query.platformId": {
       handler(val, oldVal) {
-        if (val != oldVal) {
-          this.listAccount(val, this.analysisData);
+        if (val !== oldVal) {
+          this.listAccount(this.query.memberId,val, this.analysisData);
         }
       },
       deep: true,
     },
     "query.accountId": {
       handler(val, oldVal) {
-        if (val != oldVal) {
+        if (val !== oldVal) {
           this.analysisData();
         }
       },
@@ -87,22 +109,7 @@ export default {
     },
     analysisData() {
       let $this = this;
-      let url = "/api/finance/analysis?days=20";
-      if ($this.query.platformId) {
-        url = url + "&platformId=" + $this.query.platformId;
-      }
-      if ($this.query.accountId) {
-        url = url + "&accountId=" + $this.query.accountId;
-      }
-      fetch(url, {
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      })
-        .then(function (resp) {
-          return resp.json();
-        })
-        .then(net.webResult)
+      financeAnalysis($this.query.memberId,$this.query.platformId,$this.query.accountId)
         .then(function (data) {
           let labels = [];
           let amounts = [];
@@ -115,14 +122,6 @@ export default {
             preAmount = elem.amount;
           });
           amountSub[0] = 0;
-          // $this.option.xAxis.data = labels;
-          // $this.option.series[0] = {
-          //   data: amounts,
-          // };
-          // $this.option.series[1] = {
-          //   data: amountSub,
-          // };
-
           $this.option = {
             xAxis: {
               data: labels,
@@ -181,33 +180,21 @@ export default {
     },
     listPlatform() {
       let $this = this;
-      fetch("/api/finance/platform/list", {
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      })
-        .then((res) => {
-          return res.json();
-        })
-        .then(net.webResult)
-        .then((data) => {
-          $this.platforms = data;
-        });
+      listPlatform().then((data)=>{
+        $this.platforms = data;
+      });
     },
-    listAccount(platformId, callback) {
+    listMember() {
       let $this = this;
-      if (platformId) {
-        fetch("/api/finance/account/list?platformId=" + platformId)
-          .then((res) => {
-            return res.json();
-          })
-          .then(net.webResult)
-          .then((data) => {
-            $this.accounts = data;
-          });
-      } else {
-        $this.accounts = [];
-      }
+      listMember().then(json => {
+        $this.members = json.data;
+      })
+    },
+    listAccount(memberId,platformId, callback) {
+      let $this = this;
+      listAccount(memberId,platformId).then(data => {
+        $this.accounts = data;
+      })
       $this.query.accountId = null;
       if (callback) {
         callback();
