@@ -10,22 +10,36 @@
       class="px-5 py-3"
     >
       <v-row>
-        <v-select
-          v-model="query.platformId"
-          :items="platforms"
-          label="平台"
-          item-text="name"
-          item-value="id"
-          clearable
-        />
-        <v-select
-          v-model="query.accountId"
-          :items="accounts"
-          label="账户"
-          item-text="account"
-          item-value="id"
-          clearable
-        />
+        <v-col cols="4">
+          <v-select
+            v-model="query.memberId"
+            :items="members"
+            label="成员"
+            item-text="name"
+            item-value="id"
+            clearable
+          />
+        </v-col>
+        <v-col cols="4">
+          <v-select
+            v-model="query.platformId"
+            :items="platforms"
+            label="平台"
+            item-text="name"
+            item-value="id"
+            clearable
+          />
+        </v-col>
+        <v-col cols="4">
+          <v-select
+            v-model="query.accountId"
+            :items="accounts"
+            label="账户"
+            item-text="account"
+            item-value="id"
+            clearable
+          />
+        </v-col>
       </v-row>
       <template #action>
         <v-btn
@@ -175,7 +189,7 @@
     <v-dialog
       v-model="dialog.update"
       transition="dialog-top-transition"
-      max-width="600"
+      max-width="800"
       persistent
     >
       <v-card>
@@ -188,6 +202,16 @@
         <v-card-text>
           <v-container>
             <v-row>
+              <v-col cols="12">
+                <v-select
+                  v-model="item.memberId"
+                  :items="members"
+                  label="成员"
+                  item-text="name"
+                  item-value="id"
+                  required
+                />
+              </v-col>
               <v-col cols="6">
                 <v-select
                   v-model="item.platformId"
@@ -200,19 +224,19 @@
               </v-col>
               <v-col cols="6">
                 <v-select
-                  v-model="item.amountType"
-                  :items="amountTypes"
-                  label="类型"
-                  required
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-select
                   v-model="item.accountId"
                   :items="accounts"
                   item-text="account"
                   item-value="id"
                   label="账号"
+                  required
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-select
+                  v-model="item.amountType"
+                  :items="amountTypes"
+                  label="类型"
                   required
                 />
               </v-col>
@@ -392,6 +416,7 @@
 
 <script>
   import { check302 } from '../../net.js'
+  import {listAccount, listMember, listPlatform} from '@/service/api'
   export default {
     data () {
       return {
@@ -407,6 +432,7 @@
         },
         query: {
           platformId: null,
+          memberId: null,
           accountId: null,
         },
         options: {},
@@ -420,6 +446,7 @@
           description: '',
         },
         platforms: [],
+        members: [],
         accounts: [],
         amountTypes: [{
           value: 1,
@@ -477,9 +504,17 @@
         },
         deep: true,
       },
+      'query.memberId': {
+        handler (val, oldVal) {
+          if (val !== oldVal) {
+            this.listAccount(this.query.platformId, this.list)
+          }
+        },
+        deep: true,
+      },
       'query.accountId': {
         handler (val, oldVal) {
-          if (val != oldVal) {
+          if (val !== oldVal) {
             this.list()
           }
         },
@@ -506,8 +541,9 @@
       },
     },
     mounted () {
-      this.listPlatform()
-      this.parseUrl()
+      this.listPlatform();
+      this.listMember();
+      this.parseUrl();
     },
     methods: {
       parseUrl () {
@@ -641,26 +677,16 @@
       },
       listPlatform () {
         const $this = this
-        fetch('/api/finance/platform/list', {
-          headers: {
-            'X-Requested-With': 'fetch',
-          },
+        listPlatform().then(data => {
+          $this.platforms = data
         })
-          .then((res) => { return res.json() })
-          .then($this.webResult)
-          .then(data => {
-            $this.platforms = data
-          })
       },
       listAccount (platformId, callback) {
         const $this = this
         if (platformId) {
-          fetch('/api/finance/account/list?platformId=' + platformId)
-            .then((res) => { return res.json() })
-            .then($this.webResult)
-            .then(data => {
-              $this.accounts = data
-            })
+          listAccount($this.query.memberId, platformId).then(data => {
+            $this.accounts = data
+          });
         } else {
           $this.accounts = []
         }
@@ -671,17 +697,23 @@
       },
       amountTypeName (type) {
         for (const i in this.amountTypes) {
-          if (this.amountTypes[i].value == type) {
+          if (this.amountTypes[i].value === type) {
             return this.amountTypes[i].text
           }
         }
         return ''
       },
       webResult (json) {
-        if (json.code == 0) {
+        if (json.code === 0) {
           return json.data
         }
         throw new Error(json.message)
+      },
+      listMember() {
+        let $this = this;
+        listMember().then(json=>{
+          $this.members = json.data;
+        })
       },
     },
   }

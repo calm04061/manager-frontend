@@ -1,9 +1,9 @@
 module.exports = {
     webResult(json) {
-        if (json.code == 0) {
+        if (json.code === 0) {
             return json.data;
         }
-        if (json.code == 302) {
+        if (json.code === 302) {
             let url = new URL(json.data);
             let currentSiteLoginUrl = new URL(url.searchParams.get("returnUrl"));
             let currentUrl = window.location.href;
