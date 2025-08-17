@@ -333,6 +333,7 @@ export default {
             that.item.platformId = null;
             that.item.memberId = null;
             that.item.description = "";
+            this.item.enabled = true;
             that.dialog[type] = true;
             break;
           }
@@ -362,6 +363,7 @@ export default {
       let query =[];
       if (memberId && platformId){
         query.push("memberId=" + memberId);
+        query.push("enabled=true");
         query.push("platformId=" + platformId);
       }else{
         return;
@@ -494,7 +496,7 @@ export default {
     },
     listMember() {
       let $this = this;
-      fetch("/api/member/list", {
+      fetch("/api/member/list?enabled=true", {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
@@ -529,7 +531,7 @@ export default {
         memberId: 0,
         description: "",
         parentId: null,
-        enabled: null,
+        enabled: false,
       },
       platforms: [],
       members: [],

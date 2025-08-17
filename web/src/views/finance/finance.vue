@@ -143,7 +143,7 @@
               </v-col>
               <v-col cols="12">
                 <v-text-field
-                  v-model.number="item.amount"
+                  v-model="item.amount"
                   label="金额"
                   required
                 />
@@ -240,7 +240,7 @@
               </v-col>
               <v-col cols="12">
                 <v-text-field
-                  v-model.number="item.amount"
+                  v-model="item.amount"
                   label="金额"
                   required
                 />
@@ -412,7 +412,7 @@
         options: {},
         item: {
           id: 0,
-          amount: 0,
+          amount: "0",
           amountType: 0,
           amountTime: 0,
           platformId: 0,
@@ -590,7 +590,7 @@
             body: JSON.stringify($this.item),
           })
         } else {
-          $this.item.id = -1
+          $this.item.id = 0
           promise = fetch('/api/finance/finance', {
             method: 'POST',
             headers: {
@@ -655,7 +655,7 @@
       listAccount (platformId, callback) {
         const $this = this
         if (platformId) {
-          fetch('/api/finance/account/list?platformId=' + platformId)
+          fetch('/api/finance/account/0/list?platformId=' + platformId)
             .then((res) => { return res.json() })
             .then($this.webResult)
             .then(data => {
