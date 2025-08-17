@@ -268,8 +268,8 @@ export default {
       promise
         .then(function () {
           let current = $this.$router.history.current.fullPath;
-          if(current!="/account/member"){
-          $this.$router.push("/account/member");
+          if(current!=="/account/member"){
+            $this.$router.push("/account/member");
           }
         })
         .then($this.list);
