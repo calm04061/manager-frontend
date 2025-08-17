@@ -92,7 +92,8 @@
     <v-dialog
       v-model="dialog.add"
       transition="dialog-top-transition"
-      max-width="600"
+      max-width="800"
+      scrollable
       persistent
     >
       <v-card>
@@ -105,6 +106,16 @@
         <v-card-text>
           <v-container>
             <v-row>
+              <v-col cols="12">
+                <v-select
+                  v-model="item.memberId"
+                  :items="members"
+                  label="成员"
+                  item-text="name"
+                  item-value="id"
+                  required
+                />
+              </v-col>
               <v-col cols="6">
                 <v-select
                   v-model="item.platformId"
@@ -190,6 +201,7 @@
       v-model="dialog.update"
       transition="dialog-top-transition"
       max-width="800"
+      scrollable
       persistent
     >
       <v-card>
@@ -296,7 +308,8 @@
     <v-dialog
       v-model="dialog.detail"
       transition="dialog-top-transition"
-      max-width="600"
+      max-width="800"
+      scrollable
       persistent
     >
       <v-card>
@@ -378,7 +391,7 @@
     >
       <v-card>
         <v-card-text>
-          <v-container> 你确定要删除{{ item.name }}? </v-container>
+          <v-container> 你确定要删除{{ item.name }}?</v-container>
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn @click="dialog.delete = false">
@@ -415,306 +428,297 @@
 </template>
 
 <script>
-  import { check302 } from '../../net.js'
-  import {listAccount, listMember, listPlatform} from '@/service/api'
-  export default {
-    data () {
-      return {
-        snackbar: false,
-        text: 'Hello, I\'m a snackbar',
-        amountTimePickerAdd: false,
-        amountTimePickerUpdate: false,
-        dialog: {
-          add: false,
-          detail: false,
-          update: false,
-          delete: false,
+import {financeLastDetail, listAccount, listMember, listPlatform, pageFinances} from '@/service/api'
+
+export default {
+  data() {
+    return {
+      snackbar: false,
+      text: 'Hello, I\'m a snackbar',
+      amountTimePickerAdd: false,
+      amountTimePickerUpdate: false,
+      dialog: {
+        add: false,
+        detail: false,
+        update: false,
+        delete: false,
+      },
+      query: {
+        platformId: null,
+        memberId: null,
+        accountId: null,
+      },
+      options: {},
+      item: {
+        id: 0,
+        amount: "0",
+        amountType: 0,
+        amountTime: 0,
+        platformId: 0,
+        memberId: 0,
+        accountId: 0,
+        description: '',
+      },
+      platforms: [],
+      members: [],
+      accounts: [],
+      amountTypes: [{
+        value: 1,
+        text: '支出',
+      }, {
+        value: 2,
+        text: '收入',
+      }, {
+        value: 3,
+        text: '余额',
+      }],
+      headers: [
+        {
+          text: 'ID',
+          value: 'id',
+          width: 70,
         },
-        query: {
-          platformId: null,
-          memberId: null,
-          accountId: null,
-        },
-        options: {},
-        item: {
-          id: 0,
-          amount: "0",
-          amountType: 0,
-          amountTime: 0,
-          platformId: 0,
-          accountId: 0,
-          description: '',
-        },
-        platforms: [],
-        members: [],
-        accounts: [],
-        amountTypes: [{
-          value: 1,
-          text: '支出',
-        }, {
-          value: 2,
-          text: '收入',
-        }, {
-          value: 3,
-          text: '余额',
-        }],
-        headers: [
-          {
-            text: 'ID',
-            value: 'id',
-            width: 70,
-          },
-          { text: '金额', value: 'amount', width: 100 },
-          { text: '类型', value: 'amountType', width: 100 },
-          { text: '平台', value: 'platformName', width: 100 },
-          { text: '账号', value: 'account', width: 150 },
-          { text: '说明', value: 'description' },
-          { text: '记账时间', value: 'amountTime', width: 120 },
-          { text: '', value: 'actions', sortable: false, width: 80 },
-        ],
-        page: {
-          total: 0,
-          list: [],
-        },
+        {text: '金额', value: 'amount', width: 100},
+        {text: '类型', value: 'amountType', width: 100},
+        {text: '平台', value: 'platformName', width: 100},
+        {text: '账号', value: 'account', width: 150},
+        {text: '说明', value: 'description'},
+        {text: '记账时间', value: 'amountTime', width: 120},
+        {text: '', value: 'actions', sortable: false, width: 80},
+      ],
+      page: {
+        total: 0,
+        list: [],
+      },
+    }
+  },
+  watch: {
+    $route(to, from) {
+      this.parseUrl()
+    },
+    options: {
+      handler() {
+        this.list()
+      },
+      deep: true,
+    },
+    'query.platformId': {
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listAccount(this.query.memberId, val, this.list)
+        }
+      },
+      deep: true,
+    },
+    'query.memberId': {
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listAccount(val, this.query.platformId, this.list)
+        }
+      },
+      deep: true,
+    },
+    'query.accountId': {
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.list()
+        }
+      },
+      deep: true,
+    },
+    'item.accountId': {
+      handler(val, oldVal) {
+        if (this.item.amount > 0) {
+          return
+        }
+        const $this = this
+        financeLastDetail($this.item.platformId, $this.item.amountType, val).then(data => {
+          if (data) {
+            $this.item.amount = data.amount
+          }
+        });
+      },
+      deep: true,
+    },
+    'item.platformId': {
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          this.listAccount(this.item.memberId, val)
+        }
+      },
+      deep: true,
+    },
+    'item.memberId': {
+      handler(val, oldVal) {
+        if (val !== oldVal) {
+          debugger
+          this.listAccount(val, this.item.platformId)
+        }
+      },
+      deep: true,
+    }
+  },
+  mounted() {
+    this.listPlatform();
+    this.listMember();
+    this.parseUrl();
+  },
+  methods: {
+    parseUrl() {
+      const type = this.$route.params.type
+      if (type) {
+        switch (type) {
+          case 'add': {
+            this.item.id = null
+            this.item.amount = null
+            this.item.amountType = null
+            this.item.amountTime = null
+            this.item.platformId = null
+            this.item.description = ''
+            this.dialog[type] = true
+            break
+          }
+          case 'detail':
+          case 'update': {
+            const that = this
+            const id = this.$route.params.id
+            this.detail(id, function () {
+              that.dialog[type] = true
+            })
+            break
+          }
+        }
+      } else {
+        this.dialog.add = false
+        this.dialog.detail = false
+        this.dialog.update = false
       }
     },
-    watch: {
-      $route (to, from) {
-        this.parseUrl()
-      },
-      options: {
-        handler () {
-          this.list()
-        },
-        deep: true,
-      },
-      'item.platformId': {
-        handler (val, oldVal) {
-          if (val !== oldVal) {
-            this.listAccount(val)
-          }
-        },
-        deep: true,
-      },
-      'query.platformId': {
-        handler (val, oldVal) {
-          if (val !== oldVal) {
-            this.listAccount(val, this.list)
-          }
-        },
-        deep: true,
-      },
-      'query.memberId': {
-        handler (val, oldVal) {
-          if (val !== oldVal) {
-            this.listAccount(this.query.platformId, this.list)
-          }
-        },
-        deep: true,
-      },
-      'query.accountId': {
-        handler (val, oldVal) {
-          if (val !== oldVal) {
-            this.list()
-          }
-        },
-        deep: true,
-      },
-      'item.accountId': {
-        handler (val, oldVal) {
-          if (this.item.amount > 0) {
-            return
-          }
-          const $this = this
-          fetch('/api/finance/finance/last/detail?accountId=' + val + '&platformId=' + $this.item.platformId + '&amountType=' + $this.item.amountType)
-            .then(function (res) {
-              return res.json()
-            }).then(function (json) {
-              return json.data
-            }).then(function (data) {
-              if (data) {
-                $this.item.amount = data.amount
-              }
-            })
-        },
-        deep: true,
-      },
+    list(callback) {
+      const $this = this
+      const {page, itemsPerPage} = this.options
+      const res = pageFinances(page, itemsPerPage, $this.query)
+        .then((json) => {
+          $this.page.list = json.data.list
+          $this.page.total = json.data.totalCount
+        })
+      if (callback) {
+        res.then(callback)
+      }
     },
-    mounted () {
-      this.listPlatform();
-      this.listMember();
-      this.parseUrl();
+    add() {
+      this.$router.push('/finance/finance/add')
     },
-    methods: {
-      parseUrl () {
-        const type = this.$route.params.type
-        if (type) {
-          switch (type) {
-            case 'add': {
-              this.item.id = null
-              this.item.amount = null
-              this.item.amountType = null
-              this.item.amountTime = null
-              this.item.platformId = null
-              this.item.description = ''
-              this.dialog[type] = true
-              break
-            }
-            case 'detail':
-            case 'update': {
-              const that = this
-              const id = this.$route.params.id
-              this.detail(id, function () {
-                that.dialog[type] = true
-              })
-              break
-            }
-          }
-        } else {
-          this.dialog.add = false
-          this.dialog.detail = false
-          this.dialog.update = false
-        }
-      },
-      list (callback) {
-        const $this = this
-        const { page, itemsPerPage } = this.options
-        const res = fetch(
-          '/api/finance/finances', {
-            method: 'POST',
-            headers: {
-              'Content-type': 'application/json;',
-              'X-Requested-With': 'fetch',
-            },
-            body: JSON.stringify({
-              currentPage: page,
-              pageSize: itemsPerPage,
-              query: $this.query,
-            }),
+    update(item) {
+      this.$router.push('/finance/finance/update/' + item.id)
+    },
+    close() {
+      this.$router.push('/finance/finance')
+    },
+    save() {
+      const $this = this
+      let promise
+      if ($this.item.id) {
+        promise = fetch('/api/finance/finance/' + $this.item.id, {
+          method: 'PUT',
+          headers: {
+            'Content-type': 'application/json;',
           },
-        )
-          .then(check302)
-          .then((res) => {
-            return res.json()
-          })
-          .then((json) => {
-            $this.page.list = json.data.list
-            $this.page.total = json.data.totalCount
-          })
-        if (callback) {
-          res.then(callback)
-        }
-      },
-      add () {
-        this.$router.push('/finance/finance/add')
-      },
-      update (item) {
-        this.$router.push('/finance/finance/update/' + item.id)
-      },
-      close () {
-        this.$router.push('/finance/finance')
-      },
-      save () {
-        const $this = this
-        let promise
-        if ($this.item.id) {
-          promise = fetch('/api/finance/finance/' + $this.item.id, {
-            method: 'PUT',
-            headers: {
-              'Content-type': 'application/json;',
-            },
-            body: JSON.stringify($this.item),
-          })
-        } else {
-          $this.item.id = 0
-          promise = fetch('/api/finance/finance', {
-            method: 'POST',
-            headers: {
-              'Content-type': 'application/json;',
-            },
-            body: JSON.stringify($this.item),
-          })
-        }
-        promise
-          .then((resp) => { return resp.json() })
-          .then($this.webResult)
-          .then(function () {
-            $this.$router.push('/finance/finance')
-          })
-          .then($this.list)
-      },
-      del (item) {
-        const $this = this
-        $this.item = item
-        this.dialog.delete = true
-      },
-      delConfirm () {
-        const $this = this
-        fetch('/api/finance/finance/' + $this.item.id, {
-          method: 'DELETE',
+          body: JSON.stringify($this.item),
         })
-          .then((resp) => { return resp.json() })
-          .then($this.webResult)
-          .then(function () {
-            $this.dialog.delete = false
-          })
-          .then($this.list)
-      },
-      detail (id, callback) {
-        const $this = this
-        const prom = fetch('/api/finance/finance/' + id)
-          .then((resp) => { return resp.json() })
-          .then($this.webResult)
-          .then((data) => {
-            $this.item = data
-          })
-          .catch((e) => {
-
-          })
-        if (callback) {
-          prom.then(callback)
-        }
-      },
-      listPlatform () {
-        const $this = this
-        listPlatform().then(data => {
-          $this.platforms = data
+      } else {
+        $this.item.id = 0
+        promise = fetch('/api/finance/finance', {
+          method: 'POST',
+          headers: {
+            'Content-type': 'application/json;',
+          },
+          body: JSON.stringify($this.item),
         })
-      },
-      listAccount (platformId, callback) {
-        const $this = this
-        if (platformId) {
-          listAccount($this.query.memberId, platformId).then(data => {
-            $this.accounts = data
-          });
-        } else {
-          $this.accounts = []
-        }
-        $this.query.accountId = null
-        if (callback) {
-          callback()
-        }
-      },
-      amountTypeName (type) {
-        for (const i in this.amountTypes) {
-          if (this.amountTypes[i].value === type) {
-            return this.amountTypes[i].text
-          }
-        }
-        return ''
-      },
-      webResult (json) {
-        if (json.code === 0) {
-          return json.data
-        }
-        throw new Error(json.message)
-      },
-      listMember() {
-        let $this = this;
-        listMember().then(json=>{
-          $this.members = json.data;
+      }
+      promise
+        .then((resp) => {
+          return resp.json()
         })
-      },
+        .then($this.webResult)
+        .then(function () {
+          $this.$router.push('/finance/finance')
+        })
+        .then($this.list)
     },
-  }
+    del(item) {
+      const $this = this
+      $this.item = item
+      this.dialog.delete = true
+    },
+    delConfirm() {
+      const $this = this
+      fetch('/api/finance/finance/' + $this.item.id, {
+        method: 'DELETE',
+      })
+        .then((resp) => {
+          return resp.json()
+        })
+        .then($this.webResult)
+        .then(function () {
+          $this.dialog.delete = false
+        })
+        .then($this.list)
+    },
+    detail(id, callback) {
+      const $this = this
+      const prom = fetch('/api/finance/finance/' + id)
+        .then((resp) => {
+          return resp.json()
+        })
+        .then($this.webResult)
+        .then((data) => {
+          $this.item = data
+        })
+        .catch((e) => {
+
+        })
+      if (callback) {
+        prom.then(callback)
+      }
+    },
+    listPlatform() {
+      const $this = this
+      listPlatform().then(data => {
+        $this.platforms = data
+      })
+    },
+    listAccount(memberId, platformId, callback) {
+      const $this = this
+      debugger
+      listAccount(memberId, platformId).then(data => {
+        $this.accounts = data
+      });
+      $this.query.accountId = null
+      if (callback) {
+        callback()
+      }
+    },
+    amountTypeName(type) {
+      for (const i in this.amountTypes) {
+        if (this.amountTypes[i].value === type) {
+          return this.amountTypes[i].text
+        }
+      }
+      return ''
+    },
+    webResult(json) {
+      if (json.code === 0) {
+        return json.data
+      }
+      throw new Error(json.message)
+    },
+    listMember() {
+      let $this = this;
+      listMember().then(json => {
+        $this.members = json.data;
+      })
+    },
+  },
+}
 </script>

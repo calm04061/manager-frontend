@@ -1,4 +1,4 @@
-import { webResult } from '../net.js'
+import { webResult } from '@/net'
 export function listMember() {
   return fetch("/api/member/list?enabled=true", {
     headers: {
@@ -31,4 +31,32 @@ export function listPlatform () {
   })
     .then((res) => { return res.json() })
     .then(webResult)
+}
+export function pageFinances(page,itemsPerPage,query){
+  return fetch(
+    '/api/finance/finances', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json;',
+        'X-Requested-With': 'fetch',
+      },
+      body: JSON.stringify({
+        currentPage: page,
+        pageSize: itemsPerPage,
+        query: query
+      }),
+    },
+  )
+    .then(webResult)
+    .then((res) => {
+      return res.json()
+    })
+}
+export function financeLastDetail(platformId,amountType,accountId){
+  return fetch('/api/finance/finance/last/detail?accountId=' + accountId + '&platformId=' + platformId + '&amountType=' + amountType)
+    .then(function (res) {
+      return res.json()
+    }).then(function (json) {
+      return json.data
+    });
 }

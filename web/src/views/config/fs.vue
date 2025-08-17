@@ -189,7 +189,7 @@
 </template>
 
 <<script>
-  import {check302} from "../../net.js";
+  import {webResult} from "@/net";
 export default {
   mounted() {
     this.list();
@@ -241,7 +241,7 @@ export default {
             }
           }
       )
-      .then(check302)
+      .then(webResult)
         .then((res) => {
           return res.json();
         })
@@ -286,7 +286,7 @@ export default {
       }
       promise
       .then((resp) =>  {return resp.json()})
-        .then($this.webResult)
+        .then(webResult)
         .then(function () {
           $this.$router.push("/config/fs");
         })
@@ -303,7 +303,7 @@ export default {
         method: "DELETE",
       })
       .then((resp) =>  {return resp.json()})
-        .then($this.webResult)
+        .then(webResult)
         .then(function () {
           $this.dialog.delete = false;
         })
@@ -313,7 +313,7 @@ export default {
       let $this = this;
       let prom = fetch("/api/fs/config/" + id)
         .then((resp) =>  {return resp.json()})
-        .then($this.webResult)
+        .then(webResult)
         .then((data) => {
           $this.item = data;
         })
@@ -323,18 +323,12 @@ export default {
       if (callback) {
         prom.then(callback);
       }
-    },
-    webResult(json){
-      if(json.code==0){
-        return json.data;
-      }
-      throw new Error(json.message);
     }
   },
   data() {
     return {
       snackbar: false,
-      text: 'Hello, I\'m a snackbar',     
+      text: 'Hello, I\'m a snackbar',
       amountTimePickerAdd:false,
       amountTimePickerUpdate:false,
       dialog: {
