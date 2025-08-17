@@ -1,6 +1,7 @@
 <template>
   <v-container id="dashboard" fluid tag="section">
     <v-row>
+      <v-col cols="6">
       <v-select
         :items="platforms"
         label="平台"
@@ -9,6 +10,8 @@
         v-model="query.platformId"
         clearable
       ></v-select>
+      </v-col>
+      <v-col cols="6">
       <v-select
         :items="accounts"
         label="账户"
@@ -17,6 +20,7 @@
         v-model="query.accountId"
         clearable
       ></v-select>
+      </v-col>
     </v-row>
     <!-- <base-material-chart-card
       :option="option"
