@@ -655,7 +655,7 @@
       listAccount (platformId, callback) {
         const $this = this
         if (platformId) {
-          fetch('/api/finance/account/0/list?platformId=' + platformId)
+          fetch('/api/finance/account/list?platformId=' + platformId)
             .then((res) => { return res.json() })
             .then($this.webResult)
             .then(data => {
