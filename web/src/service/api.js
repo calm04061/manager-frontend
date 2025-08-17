@@ -1,4 +1,4 @@
-import { webResult } from '@/net'
+import net, { webResult } from '@/net'
 export function listMember() {
   return fetch("/api/member/list?enabled=true", {
     headers: {
@@ -47,10 +47,10 @@ export function pageFinances(page,itemsPerPage,query){
       }),
     },
   )
-    .then(webResult)
     .then((res) => {
       return res.json()
     })
+    .then(webResult)
 }
 export function financeLastDetail(platformId,amountType,accountId){
   return fetch('/api/finance/finance/last/detail?accountId=' + accountId + '&platformId=' + platformId + '&amountType=' + amountType)
@@ -59,4 +59,25 @@ export function financeLastDetail(platformId,amountType,accountId){
     }).then(function (json) {
       return json.data
     });
+}
+export function financeAnalysis(memberId,platformId,accountId){
+  let url = "/api/finance/analysis?days=20";
+  if (memberId) {
+    url = url + "&memberId=" + memberId;
+  }
+  if (platformId) {
+    url = url + "&platformId=" + platformId;
+  }
+  if (accountId) {
+    url = url + "&accountId=" + accountId;
+  }
+  return fetch(url, {
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  })
+    .then(function (resp) {
+      return resp.json();
+    })
+    .then(net.webResult)
 }
